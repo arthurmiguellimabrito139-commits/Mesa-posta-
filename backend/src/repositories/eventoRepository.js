@@ -112,3 +112,10 @@ export async function excluirEvento(code) {
   return resultado.affectedRows; // 1 = apagou, 0 = não existia
 }
 
+export async function buscarToken(code) {
+  const [linhas] = await db.execute(
+    'SELECT admin_token FROM events WHERE code = ?',
+    [code],
+  );
+  return linhas[0]?.admin_token ?? null;
+}
