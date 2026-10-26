@@ -12,11 +12,12 @@ class Evento {
 
     // Cria N mesas iguais: Mesa 1, Mesa 2, ... cada uma com "cadeiras" lugares
     criarMesas(quantidade, cadeiras) {
-        for (let i = 1; i <= quantidade; i++) {
-            const numero = this.mesas.length + 1; // continua a numeração se já existirem mesas
-            this.mesas.push(new Mesa(numero, this.id, numero, cadeiras));
-        }
+    for (let i = 0; i < quantidade; i++) {
+        const maior = this.mesas.reduce((max, m) => Math.max(max, m.number), 0);
+        const numero = maior + 1;
+        this.mesas.push(new Mesa(null, this.id, numero, cadeiras));
     }
+}
 
     // Acha a mesa pelo número (ou undefined se não existir)
     buscarMesa(numero) {
