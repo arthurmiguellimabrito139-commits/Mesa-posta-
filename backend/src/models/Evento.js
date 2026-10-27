@@ -8,6 +8,7 @@ class Evento {
         this.horario = horario;
         this.local = local;
         this.mesas = [];
+        this.semMesa = [];
     }
 
     // Cria N mesas iguais: Mesa 1, Mesa 2, ... cada uma com "cadeiras" lugares
