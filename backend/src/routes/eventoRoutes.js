@@ -15,7 +15,7 @@ router.post('/:code/distribuir', distribuir);
 router.post('/', criarEvento);
 router.get('/:code', buscarEvento);
 router.delete('/:code', apagarEvento);
-router.post('/', editarEvento)
+router.patch('/', editarEvento)
 router.post('/:code/mesas', adicionarMesa);
 router.delete('/:code/mesas/:mesaId', removerMesa);
 
