@@ -9,7 +9,7 @@ export async function salvarMesa(mesa) {
   return mesa;
 }
 
-export async function removerMesa(code, mesaId) {
+export async function excluirMesa(code, mesaId) {
 
    const [resultado] = await db.execute(
     `delete 
@@ -18,6 +18,6 @@ export async function removerMesa(code, mesaId) {
     and 
     event_id = (select id from events where code - ? )`, [mesaId, code]
    ); 
-   return resultados.affectedRows;
+   return resultado.affectedRows;
 
 }

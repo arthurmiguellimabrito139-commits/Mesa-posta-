@@ -1,5 +1,5 @@
 import { carregarEvento } from '../repositories/eventoRepository.js';
-import { salvarMesa, excluirMesa} from '../repositories/mesaRepository.js';
+import { salvarMesa, excluirMesa } from '../repositories/mesaRepository.js';
 
 export async function adicionarMesa(req, res) {
   try {
