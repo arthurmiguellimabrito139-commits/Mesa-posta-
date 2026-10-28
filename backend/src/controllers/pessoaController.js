@@ -2,7 +2,7 @@ import Pessoa from '../models/Pessoa.js';
 import { db } from '../config/db.js';
 import { carregarEvento } from '../repositories/eventoRepository.js';
 import { salvarPessoa, atualizarMesa, excluirPessoa } from '../repositories/pessoaRepository.js';
-
+import { erroInterno } from '../utils/erros.js';
 // ───── auxiliares ─────
 
 // Procura a pessoa no evento: em alguma mesa ou no "sem mesa"
@@ -49,7 +49,7 @@ export async function reservar(req, res) {
     await salvarPessoa(pessoa, evento.id, mesaId ? Number(mesaId) : null);
     res.status(201).json(pessoa);
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -86,7 +86,7 @@ export async function moverPessoa(req, res) {
     await atualizarMesa(pessoa.id, evento.id, novaMesaId);
     res.json(await carregarEvento(evento.code));
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -102,7 +102,7 @@ export async function cancelar(req, res) {
     }
     res.json(await carregarEvento(evento.code));
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -139,7 +139,7 @@ export async function distribuir(req, res) {
     res.json({ colocadas, naoCouberam, evento: await carregarEvento(evento.code) });
   } catch (erro) {
     await conn.rollback();
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   } finally {
     conn.release();
   }

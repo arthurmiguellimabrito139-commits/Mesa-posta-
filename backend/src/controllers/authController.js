@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { salvarUsuario, buscarPorEmail } from '../repositories/usuarioRepository.js';
 import jwt from 'jsonwebtoken';
-
+import { erroInterno } from '../utils/erros.js';
 function gerarToken(usuario) {
   return jwt.sign(
     { id: usuario.id, nome: usuario.nome, email: usuario.email },
@@ -43,7 +43,7 @@ export async function cadastrar(req, res) {
     const usuario = await salvarUsuario(nome, email, senhaHash);
     res.status(201).json({ token: gerarToken(usuario), usuario });
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -61,6 +61,6 @@ export async function login(req, res) {
 
     res.json({ token: gerarToken(encontrado.usuario), usuario: encontrado.usuario });
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }

@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { buscarToken } from '../repositories/eventoRepository.js';
-
+import { erroInterno } from '../utils/erros.js';
 export async function somenteOrganizador(req, res, next) {
   try {
     const tokenRecebido = req.get('x-admin-token') || '';
@@ -16,7 +16,7 @@ export async function somenteOrganizador(req, res, next) {
 
     next(); // passou: segue para o controller
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 

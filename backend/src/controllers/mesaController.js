@@ -1,6 +1,6 @@
 import { carregarEvento } from '../repositories/eventoRepository.js';
 import { salvarMesa, excluirMesa } from '../repositories/mesaRepository.js';
-
+import { erroInterno } from '../utils/erros.js';
 export async function adicionarMesa(req, res) {
   try {
     const cadeiras = Number(req.body.cadeiras);
@@ -19,7 +19,7 @@ export async function adicionarMesa(req, res) {
 
     res.status(201).json(novaMesa);
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -35,6 +35,6 @@ export async function adicionarMesa(req, res) {
     // devolve o evento atualizado: as pessoas da mesa agora aparecem em "semMesa"
     res.json(await carregarEvento(code));
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }

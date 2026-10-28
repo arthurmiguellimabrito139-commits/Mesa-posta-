@@ -1,6 +1,6 @@
 import Evento from '../models/Evento.js';
 import { salvarEvento, carregarEvento, atualizarEvento, excluirEvento} from '../repositories/eventoRepository.js';
-
+import { erroInterno } from '../utils/erros.js';
 export async function criarEvento(req, res) {
   try {
     const { nome, data, horario, local, quantidadeMesas, cadeirasPorMesa } = req.body;
@@ -16,7 +16,7 @@ export async function criarEvento(req, res) {
 
     res.status(201).json({ id: evento.id, code, adminToken });
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -28,7 +28,7 @@ export async function buscarEvento(req, res) {
     }
     res.json(evento);
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -49,7 +49,7 @@ export async function editarEvento(req, res) {
     // devolve o evento atualizado, igual ao GET
     res.json(await carregarEvento(code));
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
 
@@ -61,6 +61,6 @@ export async function apagarEvento(req, res) {
     }
     res.status(204).end();
   } catch (erro) {
-    res.status(500).json({ erro: erro.message });
+    erroInterno(res, erro);
   }
 }
