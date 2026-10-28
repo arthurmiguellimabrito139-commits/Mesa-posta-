@@ -1,7 +1,9 @@
 // Mapa de telas do app
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout.jsx';
+import { RotaProtegida } from './components/RotaProtegida.jsx';
 import { CriarEvento } from './pages/CriarEvento.jsx';
+import { Entrar } from './pages/Entrar.jsx';
 import { PainelOrganizador } from './pages/PainelOrganizador.jsx';
 import { PaginaConvidado } from './pages/PaginaConvidado.jsx';
 import { Confirmacao } from './pages/Confirmacao.jsx';
@@ -11,14 +13,18 @@ export function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* organizador cria a festa */}
-        <Route path="/" element={<CriarEvento />} />
-        {/* organizador gerencia mesas e convidados (precisa do adminToken) */}
-        <Route path="/e/:code/admin" element={<PainelOrganizador />} />
-        {/* link que o organizador manda para os convidados */}
+        {/* conta do organizador */}
+        <Route path="/entrar" element={<Entrar modo="entrar" />} />
+        <Route path="/cadastro" element={<Entrar modo="cadastro" />} />
+
+        {/* organizador (precisa de login) */}
+        <Route path="/" element={<RotaProtegida><CriarEvento /></RotaProtegida>} />
+        <Route path="/e/:code/admin" element={<RotaProtegida><PainelOrganizador /></RotaProtegida>} />
+
+        {/* convidado (sem login) */}
         <Route path="/e/:code" element={<PaginaConvidado />} />
-        {/* comprovante da reserva (a tela do template) */}
         <Route path="/e/:code/reserva/:pessoaId" element={<Confirmacao />} />
+
         <Route path="*" element={<NaoEncontrado />} />
       </Route>
     </Routes>

@@ -11,7 +11,8 @@ import {
 } from '../components/ui.js';
 import { livresNaMesa, resumoDoEvento, useEvento } from '../hooks/useEvento.js';
 import { reservar } from '../services/api.js';
-import { guardarReserva, tokenDoEvento } from '../services/storage.js';
+import { guardarReserva } from '../services/storage.js';
+import { useMeusEventos } from '../hooks/useMeusEventos.js';
 import { dataCurta, dataLonga, diaDaSemana, numeroReserva, plural, separarUltimaPalavra } from '../utils/format.js';
 import { NaoEncontrado } from './NaoEncontrado.jsx';
 
@@ -54,6 +55,7 @@ export function PaginaConvidado() {
   const navegar = useNavigate();
   const avisar = useAviso();
   const { evento, carregando, erro, recarregar } = useEvento(code);
+  const { eventos: meus } = useMeusEventos();
 
   const [mesaId, setMesaId] = useState(null);
   const [semPreferencia, setSemPreferencia] = useState(false);
@@ -68,7 +70,7 @@ export function PaginaConvidado() {
   const resumo = resumoDoEvento(evento);
   const mesa = evento.mesas.find((m) => m.id === mesaId);
   const [comeco, ultima] = separarUltimaPalavra(evento.nome);
-  const souOrganizador = Boolean(tokenDoEvento(code));
+  const souOrganizador = meus.some((e) => e.code === code);
   const mudar = (campo) => (e) => setForm({ ...form, [campo]: e.target.value });
 
   async function confirmar(e) {

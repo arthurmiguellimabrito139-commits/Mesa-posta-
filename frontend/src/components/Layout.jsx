@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { useAuth } from '../hooks/useAuth.jsx';
 import { useMeusEventos } from '../hooks/useMeusEventos.js';
 import { dataCurta, diasAte } from '../utils/format.js';
 import { IconeFechar, IconeIngresso, IconeMais, IconeMenu, IconeMesa, IconeSol } from './Icones.jsx';
-import { Eyebrow } from './ui.js';
+import { Botao, Eyebrow } from './ui.js';
 
 const Grade = styled.div`
   display: grid;
@@ -123,7 +124,6 @@ const NadaAinda = styled.p`
 
 // O card amarelo "Today in Cassis 27°" vira a contagem para o próximo evento
 const CartaoSol = styled.div`
-  margin-top: auto;
   position: relative;
   overflow: hidden;
   flex-direction: column;
@@ -164,6 +164,37 @@ const Rodape = styled.div`
   display: flex;
 `;
 
+// Quem está logado + botão de sair (ou o convite para entrar)
+const Conta = styled.div`
+  margin-top: auto;
+  flex-direction: column;
+  gap: 0.6rem;
+  display: flex;
+  padding: 0.85rem;
+  border-radius: 0.8rem;
+  border: 1px solid ${({ theme }) => theme.cores.n400};
+  background: ${({ theme }) => theme.cores.n50};
+
+  .quem { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+  .avatar {
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: ${({ theme }) => theme.cores.terracota600};
+    color: ${({ theme }) => theme.cores.n50};
+    font: 400 1rem ${({ theme }) => theme.fontes.titulo};
+  }
+  .nome { font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .email { font-size: 0.75rem; color: ${({ theme }) => theme.cores.n600}; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dados { min-width: 0; }
+  p { font-size: 0.8125rem; color: ${({ theme }) => theme.cores.n700}; }
+  .botoes { display: flex; gap: 0.4rem; }
+  .botoes > * { flex: 1; }
+`;
+
 const Principal = styled.main`
   padding: 2rem clamp(1rem, 3.2vw, 2.5rem) 3.5rem;
   min-width: 0;
@@ -176,6 +207,7 @@ function textoContagem(dias) {
 }
 
 export function Layout() {
+  const { usuario, sair } = useAuth();
   const { eventos, reservas } = useMeusEventos();
   const [aberto, setAberto] = useState(false);
   const local = useLocation();
@@ -211,7 +243,8 @@ export function Layout() {
 
         <Secao aria-label="Eventos que organizo">
           <Eyebrow>Organizando</Eyebrow>
-          {eventos.length === 0 && <NadaAinda>Nenhum evento ainda.</NadaAinda>}
+          {!usuario && <NadaAinda>Entre para ver seus eventos.</NadaAinda>}
+          {usuario && eventos.length === 0 && <NadaAinda>Nenhum evento ainda.</NadaAinda>}
           {eventos.map((e) => (
             <Item key={e.code} to={`/e/${e.code}/admin`}>
               <IconeMesa />
@@ -233,6 +266,29 @@ export function Layout() {
             ))}
           </Secao>
         )}
+
+        <Conta>
+          {usuario ? (
+            <>
+              <div className="quem">
+                <span className="avatar" aria-hidden="true">{usuario.nome.charAt(0).toUpperCase()}</span>
+                <span className="dados">
+                  <span className="nome">{usuario.nome}</span>
+                  <span className="email">{usuario.email}</span>
+                </span>
+              </div>
+              <Botao type="button" $tamanho="pequeno" onClick={sair}>Sair</Botao>
+            </>
+          ) : (
+            <>
+              <p>Organiza uma festa? Entre para criar e gerenciar seus eventos.</p>
+              <div className="botoes">
+                <Botao as={NavLink} to="/entrar" $tamanho="pequeno" $variante="escuro">Entrar</Botao>
+                <Botao as={NavLink} to="/cadastro" $tamanho="pequeno">Criar conta</Botao>
+              </div>
+            </>
+          )}
+        </Conta>
 
         <CartaoSol>
           <Eyebrow>Próximo evento</Eyebrow>

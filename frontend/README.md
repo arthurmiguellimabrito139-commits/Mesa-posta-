@@ -20,8 +20,9 @@ O `vite.config.js` repassa tudo que começa com `/api` para `http://localhost:33
 
 | Rota | Quem usa | O que faz |
 |---|---|---|
-| `/` | organizador | cria o evento (nome, data, horário, local, mesas, cadeiras) |
-| `/e/:code/admin` | organizador | salão, convidados, colocar/mover/remover, distribuir, adicionar/remover mesa, editar/apagar evento |
+| `/entrar` e `/cadastro` | organizador | login e criação de conta |
+| `/` | organizador (logado) | cria o evento (nome, data, horário, local, mesas, cadeiras) |
+| `/e/:code/admin` | dono do evento (logado) | salão, convidados, colocar/mover/remover, distribuir, adicionar/remover mesa, editar/apagar evento |
 | `/e/:code` | convidado | escolhe a mesa e confirma o nome |
 | `/e/:code/reserva/:pessoaId` | convidado | comprovante (a tela do template), imprimir, adicionar ao calendário |
 
@@ -33,18 +34,24 @@ src/
   App.jsx             rotas
   styles/             theme.js (cores e fontes do style-guide) e GlobalStyle.js
   services/
-    api.js            todas as chamadas ao back-end (manda o x-admin-token)
-    storage.js        eventos e reservas guardados no navegador (localStorage)
+    api.js            todas as chamadas ao back-end (manda o JWT no header Authorization)
+    sessao.js         token e usuário logado (localStorage)
+    storage.js        reservas feitas como convidado (localStorage)
   hooks/
     useEvento.js      carrega o evento e atualiza depois de cada ação
     useMeusEventos.js lista da sidebar
+    useAuth.jsx       contexto de login: usuario, entrar, cadastrar, sair
   components/         Layout (sidebar), Salao (mesas e cadeiras), Leque (recibo + cartão), CartaoInfo, ui.js...
   pages/              CriarEvento, PainelOrganizador, PaginaConvidado, Confirmacao, NaoEncontrado
   utils/              datas em pt-BR e o arquivo .ics do calendário
 ```
 
-## Como funciona o organizador
+## Como funciona o login
 
-Ao criar o evento, o back-end devolve o `adminToken`. O front guarda esse token no `localStorage` e manda no header `x-admin-token` em toda ação de organizador.
+1. Em `/entrar` ou `/cadastro`, o back-end devolve `{ token, usuario }`.
+2. O `sessao.js` guarda isso no navegador, e o `useAuth` deixa o usuário disponível para todo o app.
+3. O `api.js` manda `Authorization: Bearer <token>` em toda chamada.
+4. As telas do organizador ficam dentro de `<RotaProtegida>`: sem login, a pessoa vai para `/entrar` e, depois de entrar, volta para onde estava.
+5. Se a API responder 401 (token vencido), a sessão é apagada e o app pede login de novo.
 
-Para gerenciar de outro aparelho: **Editar → Link de organizador**. O token vai depois do `#` no link, e essa parte nunca é enviada ao servidor.
+Convidados não precisam de conta: a página do convite e o comprovante continuam públicos.

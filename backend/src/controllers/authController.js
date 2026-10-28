@@ -1,5 +1,14 @@
 import bcrypt from 'bcryptjs';
 import { salvarUsuario, buscarPorEmail } from '../repositories/usuarioRepository.js';
+import jwt from 'jsonwebtoken';
+
+function gerarToken(usuario) {
+  return jwt.sign(
+    { id: usuario.id, nome: usuario.nome, email: usuario.email },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '3d' },
+  );
+}
 
 // confere o formato: algo@algo.algo, sem espaços
 const emailValido = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -32,7 +41,25 @@ export async function cadastrar(req, res) {
 
     // 4. salvar e responder
     const usuario = await salvarUsuario(nome, email, senhaHash);
-    res.status(201).json({ usuario });
+    res.status(201).json({ token: gerarToken(usuario), usuario });
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
+}
+
+export async function login(req, res) {
+  try {
+    const email = req.body.email?.trim().toLowerCase() || '';
+    const senha = req.body.senha || '';
+
+    const encontrado = await buscarPorEmail(email);
+    const senhaCerta = encontrado && (await bcrypt.compare(senha, encontrado.senhaHash));
+
+    if (!senhaCerta) {
+      return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
+    }
+
+    res.json({ token: gerarToken(encontrado.usuario), usuario: encontrado.usuario });
   } catch (erro) {
     res.status(500).json({ erro: erro.message });
   }

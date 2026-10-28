@@ -9,7 +9,7 @@ import {
   Botao, Cabecalho, Campo, Cartao, Entrada, Eyebrow, Formulario, Grade, MensagemErro, Meta, Pagina,
 } from '../components/ui.js';
 import { criarEvento } from '../services/api.js';
-import { guardarEvento } from '../services/storage.js';
+import { avisarMudanca } from '../services/storage.js';
 import { dataLonga } from '../utils/format.js';
 
 const Colunas = styled.div`
@@ -94,14 +94,13 @@ export function CriarEvento() {
     setErro('');
     setEnviando(true);
     try {
-      const { code, adminToken } = await criarEvento({
+      const { code } = await criarEvento({
         ...form,
         nome: form.nome.trim(),
         quantidadeMesas: mesas,
         cadeirasPorMesa: cadeiras,
       });
-      // guarda a "chave" do organizador neste navegador
-      guardarEvento({ code, adminToken, nome: form.nome.trim(), data: form.data });
+      avisarMudanca(); // atualiza a lista "Organizando" da sidebar
       avisar('Evento criado! Agora é só chamar os convidados.');
       navegar(`/e/${code}/admin`);
     } catch (falha) {

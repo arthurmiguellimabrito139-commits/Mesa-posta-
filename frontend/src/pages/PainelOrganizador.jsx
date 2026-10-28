@@ -1,7 +1,7 @@
 // Painel do organizador: vê o salão, coloca/move/remove convidados,
 // adiciona e remove mesas, distribui automaticamente e edita o evento.
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import styled, { css } from 'styled-components';
 import { useAviso } from '../components/Aviso.jsx';
 import { Barra, CartaoInfo, LinhaDeCartoes } from '../components/CartaoInfo.jsx';
@@ -15,7 +15,8 @@ import {
 } from '../components/ui.js';
 import { livresNaMesa, resumoDoEvento, useEvento } from '../hooks/useEvento.js';
 import * as api from '../services/api.js';
-import { atualizarEventoGuardado, esquecerEvento, guardarEvento, meusEventos, tokenDoEvento } from '../services/storage.js';
+import { avisarMudanca } from '../services/storage.js';
+import { useAuth } from '../hooks/useAuth.jsx';
 import { dataCurta, dataLonga, plural, separarUltimaPalavra } from '../utils/format.js';
 import { NaoEncontrado } from './NaoEncontrado.jsx';
 
@@ -108,19 +109,6 @@ const LinhaFim = styled.div`
   border-top: 1px dashed ${({ theme }) => theme.cores.n400};
 `;
 
-const Compartilhar = styled.div`
-  display: grid;
-  gap: 0.5rem;
-  code {
-    display: block;
-    padding: 0.55rem 0.7rem;
-    border-radius: 0.5rem;
-    background: ${({ theme }) => theme.cores.n200};
-    font: 400 0.75rem ${({ theme }) => theme.fontes.mono};
-    overflow-wrap: anywhere;
-  }
-`;
-
 const ZonaPerigo = styled.div`
   border-top: 1px dashed ${({ theme }) => theme.cores.n400};
   padding-top: 1rem;
@@ -147,62 +135,41 @@ async function copiar(texto) {
 export function PainelOrganizador() {
   const { code: codeUrl } = useParams();
   const code = codeUrl.toUpperCase();
-  const local = useLocation();
   const navegar = useNavigate();
   const avisar = useAviso();
 
-  // Link de organizador vem com "#token=..." (para abrir em outro aparelho).
-  // O "#" nunca é enviado ao servidor; aqui guardamos o token e limpamos a URL.
-  useEffect(() => {
-    const token = new URLSearchParams(local.hash.slice(1)).get('token');
-    if (token) {
-      const existente = meusEventos().find((e) => e.code === code);
-      guardarEvento({ code, adminToken: token, nome: existente?.nome || 'Evento', data: existente?.data || '' });
-      navegar(`/e/${code}/admin`, { replace: true });
-    }
-  }, [local.hash, code, navegar]);
+  // Só o dono gerencia. Conferimos se o evento está na lista "meus eventos" do usuário logado.
+  // (Mesmo que alguém pule essa tela, o back-end recusa com 403: a proteção de verdade é lá.)
+  const [souDono, setSouDono] = useState(null); // null = ainda conferindo
 
-  const temChave = Boolean(tokenDoEvento(code)) || local.hash.includes('token=');
-  if (!temChave) return <SemChave code={code} />;
+  useEffect(() => {
+    api.meusEventos()
+      .then((lista) => setSouDono(lista.some((e) => e.code === code)))
+      .catch(() => setSouDono(false));
+  }, [code]);
+
+  if (souDono === null) return <Vazio>Conferindo o evento…</Vazio>;
+  if (!souDono) return <NaoEhSeu code={code} />;
   return <Painel code={code} avisar={avisar} navegar={navegar} />;
 }
 
-function SemChave({ code }) {
-  const [valor, setValor] = useState('');
-  const [erro, setErro] = useState('');
-  const navegar = useNavigate();
-
-  function entrar(e) {
-    e.preventDefault();
-    // aceita o link inteiro ou só o token
-    const token = valor.includes('token=') ? valor.split('token=')[1].trim() : valor.trim();
-    if (token.length < 20) return setErro('Isso não parece uma chave de organizador.');
-    guardarEvento({ code, adminToken: token, nome: 'Evento', data: '' });
-    navegar(0); // recarrega a página já com a chave
-  }
-
+function NaoEhSeu({ code }) {
+  const { usuario } = useAuth();
   return (
     <Pagina>
       <Cabecalho>
         <div>
           <Eyebrow>Evento · {code}</Eyebrow>
-          <h1>Área do <em>organizador.</em></h1>
-          <Meta>Este navegador não tem a chave deste evento. Se você é convidado, a sua página é outra.</Meta>
+          <h1>Este evento não é <em>seu.</em></h1>
+          <Meta>
+            Você entrou como {usuario?.email}. Só quem criou o evento pode gerenciar as mesas.
+            Se você é convidado, a sua página é a do convite.
+          </Meta>
         </div>
         <Acoes>
-          <Botao as={Link} to={`/e/${code}`} $variante="escuro">Ir para a página do convidado</Botao>
+          <Botao as={Link} to={`/e/${code}`} $variante="escuro">Ir para o convite</Botao>
         </Acoes>
       </Cabecalho>
-      <Cartao style={{ maxWidth: '34rem' }}>
-        <Formulario onSubmit={entrar}>
-          <Campo>
-            <label htmlFor="chave">Link ou chave de organizador</label>
-            <Entrada id="chave" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Cole aqui o link de organizador" />
-          </Campo>
-          {erro && <MensagemErro>{erro}</MensagemErro>}
-          <div><Botao type="submit">Entrar como organizador</Botao></div>
-        </Formulario>
-      </Cartao>
     </Pagina>
   );
 }
@@ -213,11 +180,6 @@ function Painel({ code, avisar, navegar }) {
   const [colocando, setColocando] = useState(null); // pessoa esperando escolher mesa
   const [ocupado, setOcupado] = useState(false);
   const [editando, setEditando] = useState(false);
-
-  // mantém nome/data atualizados na sidebar
-  useEffect(() => {
-    if (evento) atualizarEventoGuardado(code, { nome: evento.nome, data: evento.data });
-  }, [evento, code]);
 
   if (carregando) return <Vazio>Carregando o salão…</Vazio>;
   if (erro?.status === 404) return <NaoEncontrado titulo="Este evento" />;
@@ -236,7 +198,7 @@ function Painel({ code, avisar, navegar }) {
       if (sucesso) avisar(typeof sucesso === 'function' ? sucesso(resultado) : sucesso);
       return resultado;
     } catch (e) {
-      avisar(e.status === 403 ? 'A chave de organizador deste navegador não vale para este evento.' : e.message, { erro: true });
+      avisar(e.message, { erro: true });
       return null;
     } finally {
       setOcupado(false);
@@ -289,7 +251,7 @@ function Painel({ code, avisar, navegar }) {
         />
         <CartaoInfo
           icone={<IconePessoas />} rotulo="Convidados" numero="02" cor="hsl(230, 49%, 56%)"
-          titulo={`${resumo.ocupadas} sentados`}
+          titulo={plural(resumo.ocupadas, 'sentado', 'sentados')}
           sub={`${plural(resumo.livres, 'lugar livre', 'lugares livres')}`}
         >
           <Barra $porcento={resumo.cadeiras ? (resumo.ocupadas / resumo.cadeiras) * 100 : 0} $cor="hsl(230, 49%, 56%)"><i /></Barra>
@@ -398,12 +360,15 @@ function Painel({ code, avisar, navegar }) {
           aoFechar={() => setEditando(false)}
           aoSalvar={async (campos) => {
             const ok = await acao(() => api.editarEvento(code, campos), 'Evento atualizado.');
-            if (ok) setEditando(false);
+            if (ok) {
+              setEditando(false);
+              avisarMudanca(); // nome/data novos na sidebar
+            }
           }}
           aoExcluir={async () => {
             try {
               await api.excluirEvento(code);
-              esquecerEvento(code);
+              avisarMudanca();
               avisar('Evento apagado.');
               navegar('/');
             } catch (e) {
@@ -562,10 +527,7 @@ function EditarEvento({ evento, code, aoFechar, aoSalvar, aoExcluir }) {
   const [form, setForm] = useState({ nome: evento.nome, data: evento.data, horario: evento.horario || '', local: evento.local || '' });
   const [confirmar, setConfirmar] = useState(false);
   const [erro, setErro] = useState('');
-  const avisar = useAviso();
   const mudar = (campo) => (e) => setForm({ ...form, [campo]: e.target.value });
-
-  const linkOrganizador = `${window.location.origin}/e/${code}/admin#token=${tokenDoEvento(code)}`;
 
   return (
     <Janela titulo="Editar evento" subtitulo={`Evento · ${code}`} aoFechar={aoFechar}>
@@ -600,16 +562,6 @@ function EditarEvento({ evento, code, aoFechar, aoSalvar, aoExcluir }) {
         <div><Botao type="submit" $variante="escuro">Salvar alterações</Botao></div>
       </Formulario>
 
-      <Compartilhar>
-        <Eyebrow>Link de organizador</Eyebrow>
-        <code>{linkOrganizador}</code>
-        <small>Abra este link em outro aparelho para gerenciar o evento de lá. Não mande para convidados.</small>
-        <div>
-          <Pilula type="button" onClick={async () => avisar((await copiar(linkOrganizador)) ? 'Link de organizador copiado!' : 'Não consegui copiar.')}>
-            Copiar
-          </Pilula>
-        </div>
-      </Compartilhar>
 
       <ZonaPerigo>
         <p>Apagar o evento remove todas as mesas e convidados. Não dá para desfazer.</p>
