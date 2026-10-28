@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { salvarUsuario, buscarPorEmail } from '../repositories/usuarioRepository.js';
+import { salvarUsuario, buscarPorEmail, buscarPorId } from '../repositories/usuarioRepository.js';
 import jwt from 'jsonwebtoken';
 import { erroInterno } from '../utils/erros.js';
 function gerarToken(usuario) {
@@ -60,6 +60,18 @@ export async function login(req, res) {
     }
 
     res.json({ token: gerarToken(encontrado.usuario), usuario: encontrado.usuario });
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
+}
+
+export async function eu(req, res) {
+  try {
+    const usuario = await buscarPorId(req.usuario.id);
+    if (!usuario) {
+      return res.status(401).json({ erro: 'Conta não encontrada.' });
+    }
+    res.json(usuario);
   } catch (erro) {
     erroInterno(res, erro);
   }

@@ -20,3 +20,10 @@ export async function buscarPorEmail(email) {
   const u = linhas[0];
   return { usuario: new Usuario(u.id, u.nome, u.email), senhaHash: u.senha_hash };
 }
+
+export async function buscarPorId(id) {
+  const [linhas] = await db.execute('SELECT id, nome, email FROM usuarios WHERE id = ?', [id]);
+  if (linhas.length === 0) return null;
+  const u = linhas[0];
+  return new Usuario(u.id, u.nome, u.email);
+}
