@@ -16,7 +16,7 @@ export async function excluirMesa(code, mesaId) {
     from event_tables
     where id = ? 
     and 
-    event_id = (select id from events where code - ? )`, [mesaId, code]
+    event_id = (select id from events where code = ? )`, [mesaId, code]
    ); 
    return resultado.affectedRows;
 
