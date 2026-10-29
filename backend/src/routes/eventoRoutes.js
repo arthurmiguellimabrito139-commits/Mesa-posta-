@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { criarEvento, buscarEvento, editarEvento, apagarEvento, meusEventos } from '../controllers/eventoController.js';
 import { adicionarMesa, removerMesa } from '../controllers/mesaController.js';
 import { reservar, moverPessoa, cancelar, distribuir } from '../controllers/pessoaController.js';
-import { autenticar } from '../middlewares/autenticar.js';
 import { somenteOrganizador } from '../middlewares/somenteOrganizador.js';
 import { autenticar, autenticarOpcional } from '../middlewares/autenticar.js';
 
