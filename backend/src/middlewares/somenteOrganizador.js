@@ -1,28 +1,20 @@
-import crypto from 'node:crypto';
-import { buscarToken } from '../repositories/eventoRepository.js';
+import { buscarDono } from '../repositories/eventoRepository.js';
 import { erroInterno } from '../utils/erros.js';
+
+// Roda DEPOIS do autenticar: confere se o usuário logado é o dono do evento da URL
 export async function somenteOrganizador(req, res, next) {
   try {
-    const tokenRecebido = req.get('x-admin-token') || '';
-    const tokenCerto = await buscarToken(req.params.code.toUpperCase());
+    const dono = await buscarDono(req.params.code.toUpperCase());
 
-    if (!tokenCerto) {
+    if (dono === undefined) {
       return res.status(404).json({ erro: 'Evento não encontrado.' });
     }
-
-    if (!tokensIguais(tokenRecebido, tokenCerto)) {
+    if (dono !== req.usuario.id) {
       return res.status(403).json({ erro: 'Só o organizador pode fazer isso.' });
     }
 
-    next(); // passou: segue para o controller
+    next();
   } catch (erro) {
     erroInterno(res, erro);
   }
-}
-
-// Compara em tempo constante
-function tokensIguais(a, b) {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
