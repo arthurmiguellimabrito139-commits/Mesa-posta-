@@ -17,3 +17,17 @@ export function autenticar(req, res, next) {
     return res.status(401).json({ erro: 'Sessão inválida ou expirada. Faça login de novo.' });
   }
 }
+
+export function autenticarOpcional(req, res, next) {
+  const [tipo, token] = (req.get('authorization') || '').split(' ');
+
+  if (tipo === 'Bearer' && token) {
+    try {
+      const dados = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      req.usuario = { id: dados.id, nome: dados.nome, email: dados.email };
+    } catch {
+      // token inválido numa rota pública: trata como visitante
+    }
+  }
+  next();
+}

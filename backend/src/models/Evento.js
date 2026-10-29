@@ -58,6 +58,14 @@ class Evento {
     lugaresDisponiveis() {
         return this.mesas.reduce((soma, m) => soma + m.lugaresDisponiveis(), 0);
     }
+
+    esconderContatos() {
+    const todas = [...this.mesas.flatMap(m => m.pessoas), ...this.semMesa];
+    todas.forEach(p => {
+        delete p.email;
+        delete p.telefone;
+    });
+}
 }
 
 export default Evento;

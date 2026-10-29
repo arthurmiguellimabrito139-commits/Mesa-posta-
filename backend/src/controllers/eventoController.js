@@ -1,6 +1,6 @@
 import Evento from '../models/Evento.js';
 import {
-  salvarEvento, carregarEvento, atualizarEvento, excluirEvento, listarEventosDoUsuario,
+  salvarEvento, carregarEvento, atualizarEvento, excluirEvento, listarEventosDoUsuario, buscarDono
 } from '../repositories/eventoRepository.js';
 import { erroInterno } from '../utils/erros.js';
 
@@ -28,16 +28,22 @@ export async function criarEvento(req, res) {
 // GET /api/eventos/:code  (público)
 export async function buscarEvento(req, res) {
   try {
-    const evento = await carregarEvento(req.params.code.toUpperCase());
+    const code = req.params.code.toUpperCase();
+    const evento = await carregarEvento(code);
     if (!evento) {
       return res.status(404).json({ erro: 'Evento não encontrado.' });
     }
+
+    const dono = await buscarDono(code);
+    if (req.usuario?.id !== dono) {
+      evento.esconderContatos();
+    }
+
     res.json(evento);
   } catch (erro) {
     erroInterno(res, erro);
   }
 }
-
 // PATCH /api/eventos/:code  (dono)
 export async function editarEvento(req, res) {
   try {

@@ -4,6 +4,7 @@ import { adicionarMesa, removerMesa } from '../controllers/mesaController.js';
 import { reservar, moverPessoa, cancelar, distribuir } from '../controllers/pessoaController.js';
 import { autenticar } from '../middlewares/autenticar.js';
 import { somenteOrganizador } from '../middlewares/somenteOrganizador.js';
+import { autenticar, autenticarOpcional } from '../middlewares/autenticar.js';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.post('/:code/pessoas', reservar);
 // ---------- precisa estar logado ----------
 router.get('/', autenticar, meusEventos);
 router.post('/', autenticar, criarEvento);
+router.get('/:code', autenticarOpcional, buscarEvento);
 
 // ---------- precisa ser o dono do evento ----------
 router.patch('/:code', organizador, editarEvento);
